@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collatz Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1021;
+      --card: rgba(255, 255, 255, 0.06);
+      --accent: #ff8f70;
+      --accent-2: #6fd1c5;
+      --text: #e7e9f2;
+      --muted: #9aa0b5;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 20%, rgba(255, 143, 112, 0.12), transparent 35%),
+                  radial-gradient(circle at 80% 0%, rgba(111, 209, 197, 0.16), transparent 45%),
+                  linear-gradient(135deg, #0c1024 0%, #090c1b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .shell {
+      width: min(1100px, 100%);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 38px);
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 15px;
+      margin: 0;
+      max-width: 620px;
+      line-height: 1.45;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      letter-spacing: 0.1px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="number"], input[type="range"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 16px;
+      outline: none;
+      transition: border 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 143, 112, 0.18);
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #0c1024;
+      background: linear-gradient(135deg, var(--accent), #ffbc70);
+      box-shadow: 0 12px 30px rgba(255, 143, 112, 0.32);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); box-shadow: 0 8px 16px rgba(255, 143, 112, 0.28); }
+
+    .presets {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      transition: border 0.15s ease, background 0.15s ease;
+    }
+
+    .chip:hover { border-color: var(--accent); background: rgba(255, 143, 112, 0.15); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .metric .label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+    .metric .value { font-size: 24px; font-weight: 600; }
+
+    .chart-shell {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      position: relative;
+    }
+
+    canvas {
+      width: 100%;
+      height: 430px;
+      display: block;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+    }
+
+    .sequence {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bad-input { color: #ff9ca6; margin-top: 8px; font-size: 14px; }
+
+    @media (max-width: 640px) {
+      body { padding: 18px; }
+      .shell { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Collatz Visualizer</h1>
+      <p class="tagline">Pick a starting integer, watch the 3n + 1 map unfold, and see how long it takes to fall back to 1. Animated, stats-rich, and zero dependencies.</p>
+    </header>
+
+    <div class="controls">
+      <div class="panel">
+        <label for="start">Starting number</label>
+        <div class="row">
+          <input id="start" type="number" min="1" step="1" value="11" inputmode="numeric" />
+          <button id="run" class="btn" type="button">Visualize</button>
+        </div>
+        <div class="presets" aria-label="Preset starting numbers">
+          <button class="chip" data-value="6">6</button>
+          <button class="chip" data-value="11">11</button>
+          <button class="chip" data-value="19">19</button>
+          <button class="chip" data-value="27">27</button>
+          <button class="chip" data-value="97">97</button>
+        </div>
+        <div class="bad-input" id="error" role="alert" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <label for="speed">Animation delay (ms per step)</label>
+        <input id="speed" type="range" min="16" max="600" value="120" />
+        <div class="row" style="margin-top:8px;">
+          <span style="color:var(--muted);">Faster</span>
+          <span id="speed-value" style="font-weight:600;">120 ms</span>
+          <span style="color:var(--muted);">Slower</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="label">Steps to 1</div>
+        <div class="value" id="steps">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Peak value</div>
+        <div class="value" id="peak">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Current value</div>
+        <div class="value" id="current">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Sequence length</div>
+        <div class="value" id="length">-</div>
+      </div>
+    </div>
+
+    <div class="chart-shell">
+      <canvas id="chart" aria-label="Collatz sequence plot"></canvas>
+    </div>
+    <div class="sequence" id="sequence"></div>
+  </div>
+
+  <script>
+    const startInput = document.getElementById('start');
+    const runBtn = document.getElementById('run');
+    const errorEl = document.getElementById('error');
+    const speedInput = document.getElementById('speed');
+    const speedValue = document.getElementById('speed-value');
+
+    const stepsEl = document.getElementById('steps');
+    const peakEl = document.getElementById('peak');
+    const currentEl = document.getElementById('current');
+    const lengthEl = document.getElementById('length');
+    const sequenceEl = document.getElementById('sequence');
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+
+    let animationId = null;
+
+    const MAX_STEPS = 10000;
+
+    function collatzSequence(n) {
+      const seq = [n];
+      while (n !== 1 && seq.length < MAX_STEPS) {
+        n = n % 2 === 0 ? n / 2 : 3 * n + 1;
+        seq.push(n);
+      }
+      return seq;
+    }
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    function drawChart(seq, upto) {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const padding = 36;
+      const usableW = width - padding * 2;
+      const usableH = height - padding * 2;
+      ctx.clearRect(0, 0, width, height);
+
+      const maxVal = Math.max(...seq);
+      const steps = Math.max(upto, 1);
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + (usableH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+      }
+
+      // sequence polyline
+      ctx.strokeStyle = '#6fd1c5';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const val = seq[i];
+        const x = padding + (usableW * (i / (seq.length - 1 || 1)));
+        const y = padding + usableH - (val / maxVal) * usableH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // current marker
+      const val = seq[steps];
+      const x = padding + (usableW * (steps / (seq.length - 1 || 1)));
+      const y = padding + usableH - (val / maxVal) * usableH;
+      ctx.fillStyle = '#ffbc70';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // label
+      ctx.fillStyle = '#e7e9f2';
+      ctx.font = '14px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`n${steps === 0 ? '' : '  b7 '}step ${steps}: ${val}`, x + 10, y - 10 < padding ? y + 18 : y - 10);
+    }
+
+    function renderStats(seq, step) {
+      const peak = Math.max(...seq);
+      stepsEl.textContent = seq[seq.length - 1] === 1 ? seq.length - 1 : '>'+ (seq.length - 1);
+      peakEl.textContent = peak.toLocaleString();
+      currentEl.textContent = seq[step].toLocaleString();
+      lengthEl.textContent = seq.length.toLocaleString();
+    }
+
+    function renderSequence(seq) {
+      const preview = seq.slice(0, 120).join('  b7 ');
+      const suffix = seq.length > 120 ? '  b7 ...' : '';
+      sequenceEl.textContent = preview + suffix;
+    }
+
+    function startAnimation(seq) {
+      cancelAnimationFrame(animationId);
+      let step = 0;
+      let last = 0;
+      const delay = () => parseInt(speedInput.value, 10);
+
+      function frame(ts) {
+        if (!last) last = ts;
+        if (ts - last >= delay()) {
+          step = Math.min(step + 1, seq.length - 1);
+          last = ts;
+        }
+        drawChart(seq, step);
+        renderStats(seq, step);
+        if (step < seq.length - 1) animationId = requestAnimationFrame(frame);
+      }
+
+      animationId = requestAnimationFrame(frame);
+    }
+
+    function handleRun(value) {
+      if (!Number.isInteger(value) || value < 1) {
+        errorEl.textContent = 'Enter a positive integer (>= 1).';
+        return;
+      }
+      errorEl.textContent = '';
+      const seq = collatzSequence(value);
+      resizeCanvas();
+      renderSequence(seq);
+      startAnimation(seq);
+    }
+
+    // Event wiring
+    runBtn.addEventListener('click', () => {
+      handleRun(parseInt(startInput.value, 10));
+    });
+
+    startInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') handleRun(parseInt(startInput.value, 10));
+    });
+
+    document.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        startInput.value = chip.dataset.value;
+        handleRun(parseInt(chip.dataset.value, 10));
+      });
+    });
+
+    speedInput.addEventListener('input', () => {
+      speedValue.textContent = `${speedInput.value} ms`;
+    });
+
+    window.addEventListener('resize', () => {
+      if (startInput.value) handleRun(parseInt(startInput.value, 10));
+    });
+
+    // boot
+    resizeCanvas();
+    handleRun(parseInt(startInput.value, 10));
+  </script>
+</body>
+</html>
