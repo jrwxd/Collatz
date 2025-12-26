@@ -12,7 +12,6 @@
       --bg: #0b1021;
       --card: rgba(255, 255, 255, 0.06);
       --accent: #ff8f70;
-      --accent-2: #6fd1c5;
       --text: #e7e9f2;
       --muted: #9aa0b5;
       --border: rgba(255, 255, 255, 0.12);
@@ -58,6 +57,8 @@
       font-size: clamp(28px, 3vw, 38px);
       letter-spacing: -0.5px;
     }
+
+    h3 { margin: 0; font-size: 18px; }
 
     .tagline {
       color: var(--muted);
@@ -196,9 +197,40 @@
 
     .bad-input { color: #ff9ca6; margin-top: 8px; font-size: 14px; }
 
+    .three-shell {
+      margin-top: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .three-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .three-hint { color: var(--muted); font-size: 13px; }
+
+    .three-container {
+      width: 100%;
+      height: 480px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: radial-gradient(circle at 40% 30%, rgba(255, 143, 112, 0.08), transparent 40%),
+                  radial-gradient(circle at 70% 70%, rgba(111, 209, 197, 0.12), transparent 45%),
+                  #0c1024;
+      overflow: hidden;
+    }
+
     @media (max-width: 640px) {
       body { padding: 18px; }
       .shell { padding: 18px; }
+      .three-container { height: 360px; }
     }
   </style>
 </head>
@@ -234,6 +266,17 @@
           <span style="color:var(--muted);">Slower</span>
         </div>
       </div>
+      <div class="panel">
+        <label for="max-n">Three.js sweep upper bound</label>
+        <div class="row">
+          <input id="max-n" type="number" min="10" max="4000" step="10" value="300" />
+          <button id="three-run" class="btn" type="button">Play 3D sweep</button>
+        </div>
+        <div class="row" style="margin-top:8px; gap: 10px;">
+          <span id="three-status" style="color:var(--muted);">Idle</span>
+          <button id="three-reset" class="chip" type="button">Reset</button>
+        </div>
+      </div>
     </div>
 
     <div class="metrics">
@@ -259,9 +302,19 @@
       <canvas id="chart" aria-label="Collatz sequence plot"></canvas>
     </div>
     <div class="sequence" id="sequence"></div>
+
+    <div class="three-shell">
+      <div class="three-header">
+        <h3>3D Collatz sweep</h3>
+        <span class="three-hint">Counts from 1 -> N and draws edges n -> f(n) in 3D space</span>
+      </div>
+      <div id="three-container" class="three-container" aria-label="Three.js Collatz visualization"></div>
+    </div>
   </div>
 
+  <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
   <script>
+    // 2D canvas visualizer
     const startInput = document.getElementById('start');
     const runBtn = document.getElementById('run');
     const errorEl = document.getElementById('error');
@@ -277,7 +330,6 @@
     const ctx = canvas.getContext('2d');
 
     let animationId = null;
-
     const MAX_STEPS = 10000;
 
     function collatzSequence(n) {
@@ -293,7 +345,7 @@
       const dpr = window.devicePixelRatio || 1;
       canvas.width = canvas.clientWidth * dpr;
       canvas.height = canvas.clientHeight * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function drawChart(seq, upto) {
@@ -304,8 +356,8 @@
       const usableH = height - padding * 2;
       ctx.clearRect(0, 0, width, height);
 
-      const maxVal = Math.max(...seq);
-      const steps = Math.max(upto, 1);
+      const maxVal = Math.max(...seq) || 1;
+      const step = Math.min(Math.max(upto, 0), seq.length - 1);
 
       // gridlines
       ctx.strokeStyle = 'rgba(255,255,255,0.06)';
@@ -322,9 +374,9 @@
       ctx.strokeStyle = '#6fd1c5';
       ctx.lineWidth = 2.4;
       ctx.beginPath();
-      for (let i = 0; i <= steps; i++) {
+      for (let i = 0; i <= step; i++) {
         const val = seq[i];
-        const x = padding + (usableW * (i / (seq.length - 1 || 1)));
+        const x = padding + usableW * (i / Math.max(seq.length - 1, 1));
         const y = padding + usableH - (val / maxVal) * usableH;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -332,8 +384,8 @@
       ctx.stroke();
 
       // current marker
-      const val = seq[steps];
-      const x = padding + (usableW * (steps / (seq.length - 1 || 1)));
+      const val = seq[step];
+      const x = padding + usableW * (step / Math.max(seq.length - 1, 1));
       const y = padding + usableH - (val / maxVal) * usableH;
       ctx.fillStyle = '#ffbc70';
       ctx.beginPath();
@@ -344,20 +396,23 @@
       ctx.fillStyle = '#e7e9f2';
       ctx.font = '14px "Space Grotesk", sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`n${steps === 0 ? '' : '  b7 '}step ${steps}: ${val}`, x + 10, y - 10 < padding ? y + 18 : y - 10);
+      const label = step === 0 ? `n step ${step}: ${val}` : `n -> step ${step}: ${val}`;
+      const labelY = y - 10 < padding ? y + 18 : y - 10;
+      ctx.fillText(label, x + 10, labelY);
     }
 
     function renderStats(seq, step) {
       const peak = Math.max(...seq);
-      stepsEl.textContent = seq[seq.length - 1] === 1 ? seq.length - 1 : '>'+ (seq.length - 1);
+      const converged = seq[seq.length - 1] === 1;
+      stepsEl.textContent = converged ? seq.length - 1 : '>' + (seq.length - 1);
       peakEl.textContent = peak.toLocaleString();
       currentEl.textContent = seq[step].toLocaleString();
       lengthEl.textContent = seq.length.toLocaleString();
     }
 
     function renderSequence(seq) {
-      const preview = seq.slice(0, 120).join('  b7 ');
-      const suffix = seq.length > 120 ? '  b7 ...' : '';
+      const preview = seq.slice(0, 120).join(' -> ');
+      const suffix = seq.length > 120 ? ' -> ...' : '';
       sequenceEl.textContent = preview + suffix;
     }
 
@@ -393,7 +448,7 @@
       startAnimation(seq);
     }
 
-    // Event wiring
+    // Events
     runBtn.addEventListener('click', () => {
       handleRun(parseInt(startInput.value, 10));
     });
@@ -415,11 +470,204 @@
 
     window.addEventListener('resize', () => {
       if (startInput.value) handleRun(parseInt(startInput.value, 10));
+      handleThreeResize();
     });
 
-    // boot
+    // boot 2D
     resizeCanvas();
     handleRun(parseInt(startInput.value, 10));
+
+    // 3D Three.js sweep
+    const maxNInput = document.getElementById('max-n');
+    const threeRunBtn = document.getElementById('three-run');
+    const threeResetBtn = document.getElementById('three-reset');
+    const threeStatus = document.getElementById('three-status');
+    const threeContainer = document.getElementById('three-container');
+
+    const edgeColors = {
+      odd: [1, 0.56, 0.44],
+      even: [0.44, 0.82, 0.78],
+    };
+
+    let threeScene = null;
+    let threeCamera = null;
+    let threeRenderer = null;
+    let threeGroup = null;
+    let edgesGeo = null;
+    let edgesMesh = null;
+    let nodesPoints = null;
+    let threePlaying = false;
+    let threeCurrent = 1;
+    let threeMax = 300;
+    let threeEdgeCount = 0;
+    let threeLastTick = 0;
+
+    function clampMaxN(value) {
+      if (!Number.isFinite(value)) return 300;
+      return Math.min(Math.max(Math.round(value), 10), 4000);
+    }
+
+    function posFor(n) {
+      const angle = n * 0.45;
+      const radius = 0.16 * Math.sqrt(n);
+      const z = Math.log(n + 1) * 0.6;
+      return new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
+    }
+
+    function ensureThree() {
+      if (threeScene) return;
+      threeScene = new THREE.Scene();
+      threeScene.background = null;
+
+      threeCamera = new THREE.PerspectiveCamera(
+        60,
+        threeContainer.clientWidth / threeContainer.clientHeight,
+        0.1,
+        1000
+      );
+      threeCamera.position.set(0, 0, 18);
+
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+      threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+      threeContainer.innerHTML = '';
+      threeContainer.appendChild(threeRenderer.domElement);
+
+      threeGroup = new THREE.Group();
+      threeScene.add(threeGroup);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+      dir.position.set(3, 6, 8);
+      threeScene.add(ambient, dir);
+
+      edgesGeo = new THREE.BufferGeometry();
+      edgesMesh = new THREE.LineSegments(
+        edgesGeo,
+        new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 })
+      );
+      threeGroup.add(edgesMesh);
+
+      startRenderLoop();
+    }
+
+    function rebuildNodes(maxN) {
+      if (!threeScene) ensureThree();
+      const nodePositions = new Float32Array(maxN * 3);
+      for (let i = 1; i <= maxN; i++) {
+        const p = posFor(i);
+        const idx = (i - 1) * 3;
+        nodePositions[idx] = p.x;
+        nodePositions[idx + 1] = p.y;
+        nodePositions[idx + 2] = p.z;
+      }
+      const nodeGeo = new THREE.BufferGeometry();
+      nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
+      const nodeMat = new THREE.PointsMaterial({ color: 0x6fd1c5, size: 0.16, sizeAttenuation: true });
+
+      if (nodesPoints) threeGroup.remove(nodesPoints);
+      nodesPoints = new THREE.Points(nodeGeo, nodeMat);
+      threeGroup.add(nodesPoints);
+    }
+
+    function rebuildEdges(maxN) {
+      const edgeCap = maxN * 2 * 3;
+      edgesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edgeCap), 3));
+      edgesGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(edgeCap), 3));
+      edgesGeo.setDrawRange(0, 0);
+      threeEdgeCount = 0;
+    }
+
+    function setThreeStatus(msg) {
+      threeStatus.textContent = msg;
+    }
+
+    function addEdgeFor(n) {
+      const next = n % 2 === 0 ? n / 2 : 3 * n + 1;
+      const a = posFor(n);
+      const b = posFor(next);
+
+      const posAttr = edgesGeo.getAttribute('position');
+      const colorAttr = edgesGeo.getAttribute('color');
+      const base = threeEdgeCount * 6;
+
+      posAttr.array[base] = a.x; posAttr.array[base + 1] = a.y; posAttr.array[base + 2] = a.z;
+      posAttr.array[base + 3] = b.x; posAttr.array[base + 4] = b.y; posAttr.array[base + 5] = b.z;
+
+      const col = n % 2 === 0 ? edgeColors.even : edgeColors.odd;
+      colorAttr.array[base] = col[0]; colorAttr.array[base + 1] = col[1]; colorAttr.array[base + 2] = col[2];
+      colorAttr.array[base + 3] = col[0]; colorAttr.array[base + 4] = col[1]; colorAttr.array[base + 5] = col[2];
+
+      posAttr.needsUpdate = true;
+      colorAttr.needsUpdate = true;
+      threeEdgeCount += 1;
+      edgesGeo.setDrawRange(0, threeEdgeCount * 2);
+    }
+
+    function resetThree(maxN) {
+      ensureThree();
+      threeMax = clampMaxN(maxN);
+      maxNInput.value = threeMax;
+      threeCurrent = 1;
+      threePlaying = false;
+      threeLastTick = 0;
+      rebuildNodes(threeMax);
+      rebuildEdges(threeMax);
+      setThreeStatus(`Ready to draw 1..${threeMax}`);
+      threeRenderer.render(threeScene, threeCamera);
+    }
+
+    function tickThree(ts) {
+      if (!threePlaying) return;
+      if (!threeLastTick) threeLastTick = ts;
+      const delay = parseInt(speedInput.value, 10);
+      if (ts - threeLastTick >= delay) {
+        if (threeCurrent > threeMax) {
+          threePlaying = false;
+          setThreeStatus(`Done - drew 1..${threeMax}`);
+          return;
+        }
+        addEdgeFor(threeCurrent);
+        setThreeStatus(`Drawing n=${threeCurrent}/${threeMax}`);
+        threeCurrent += 1;
+        threeLastTick = ts;
+      }
+      requestAnimationFrame(tickThree);
+    }
+
+    function startRenderLoop() {
+      function loop() {
+        if (threeGroup) threeGroup.rotation.y += 0.0025;
+        if (threeRenderer && threeScene && threeCamera) threeRenderer.render(threeScene, threeCamera);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    function handleThreeResize() {
+      if (!threeRenderer || !threeCamera) return;
+      const { clientWidth, clientHeight } = threeContainer;
+      threeCamera.aspect = clientWidth / Math.max(clientHeight, 1);
+      threeCamera.updateProjectionMatrix();
+      threeRenderer.setSize(clientWidth, clientHeight);
+    }
+
+    threeRunBtn.addEventListener('click', () => {
+      const max = clampMaxN(parseInt(maxNInput.value, 10));
+      if (!threeScene) ensureThree();
+      if (max !== threeMax || !threeEdgeCount) resetThree(max);
+      threePlaying = true;
+      threeLastTick = 0;
+      requestAnimationFrame(tickThree);
+      setThreeStatus(`Drawing n=1/${threeMax}`);
+    });
+
+    threeResetBtn.addEventListener('click', () => {
+      resetThree(parseInt(maxNInput.value, 10));
+    });
+
+    // boot 3D
+    resetThree(parseInt(maxNInput.value, 10));
   </script>
 </body>
 </html>
