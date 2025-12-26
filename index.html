@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collatz Visualizer</title>
+  <title>Collatz 3D Graph</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b1021;
-      --card: rgba(255, 255, 255, 0.06);
-      --accent: #ff8f70;
-      --text: #e7e9f2;
-      --muted: #9aa0b5;
+      --bg: #060915;
+      --card: rgba(255, 255, 255, 0.04);
+      --accent: #ff9b6a;
+      --accent-2: #6fd1c5;
+      --text: #eef2fb;
+      --muted: #99a0b5;
       --border: rgba(255, 255, 255, 0.12);
     }
 
@@ -24,650 +25,337 @@
       min-height: 100vh;
       font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
       color: var(--text);
-      background: radial-gradient(circle at 20% 20%, rgba(255, 143, 112, 0.12), transparent 35%),
-                  radial-gradient(circle at 80% 0%, rgba(111, 209, 197, 0.16), transparent 45%),
-                  linear-gradient(135deg, #0c1024 0%, #090c1b 100%);
+      background: radial-gradient(circle at 18% 20%, rgba(255, 155, 106, 0.14), transparent 35%),
+                  radial-gradient(circle at 78% 10%, rgba(111, 209, 197, 0.18), transparent 45%),
+                  linear-gradient(135deg, #070b1a 0%, #040712 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px;
+      padding: 26px;
     }
 
     .shell {
       width: min(1100px, 100%);
-      background: rgba(255, 255, 255, 0.02);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px;
+      border-radius: 18px;
+      padding: 18px;
       box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
       backdrop-filter: blur(8px);
     }
 
-    header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(28px, 3vw, 38px);
-      letter-spacing: -0.5px;
-    }
-
-    h3 { margin: 0; font-size: 18px; }
-
-    .tagline {
-      color: var(--muted);
-      font-size: 15px;
-      margin: 0;
-      max-width: 620px;
-      line-height: 1.45;
-    }
+    header { margin-bottom: 14px; }
+    h1 { margin: 0; font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.3px; }
+    .tagline { margin: 6px 0 0 0; color: var(--muted); font-size: 15px; max-width: 760px; }
 
     .controls {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 14px;
     }
 
     .panel {
-      background: var(--card);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 16px;
+      padding: 12px;
     }
 
-    label {
-      display: block;
-      font-size: 13px;
-      letter-spacing: 0.1px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 
     input[type="number"], input[type="range"] {
       width: 100%;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 10px;
-      padding: 12px;
-      font-size: 16px;
+      padding: 10px;
+      font-size: 15px;
       outline: none;
       transition: border 0.15s ease, box-shadow 0.15s ease;
     }
 
-    input[type="number"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 143, 112, 0.18);
-    }
+    input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 155, 106, 0.18); }
 
-    .row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
     .btn {
       border: none;
       cursor: pointer;
-      padding: 12px 16px;
-      border-radius: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
       font-weight: 600;
-      font-size: 15px;
-      color: #0c1024;
-      background: linear-gradient(135deg, var(--accent), #ffbc70);
-      box-shadow: 0 12px 30px rgba(255, 143, 112, 0.32);
+      font-size: 14px;
+      color: #070b1a;
+      background: linear-gradient(135deg, var(--accent), #ffc97a);
+      box-shadow: 0 10px 24px rgba(255, 155, 106, 0.28);
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
-
     .btn:hover { transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); box-shadow: 0 8px 16px rgba(255, 143, 112, 0.28); }
-
-    .presets {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
+    .btn:active { transform: translateY(0); box-shadow: 0 8px 16px rgba(255, 155, 106, 0.24); }
 
     .chip {
       padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       color: var(--text);
       cursor: pointer;
-      font-size: 14px;
-      transition: border 0.15s ease, background 0.15s ease;
+      font-size: 13px;
     }
 
-    .chip:hover { border-color: var(--accent); background: rgba(255, 143, 112, 0.15); }
+    .status { color: var(--muted); font-size: 13px; }
 
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .metric {
-      background: var(--card);
+    .stage {
+      width: 100%;
+      height: 560px;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 14px 16px;
-    }
-
-    .metric .label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-    .metric .value { font-size: 24px; font-weight: 600; }
-
-    .chart-shell {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      position: relative;
-    }
-
-    canvas {
-      width: 100%;
-      height: 430px;
-      display: block;
-      border-radius: 12px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-    }
-
-    .sequence {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-      max-height: 120px;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .bad-input { color: #ff9ca6; margin-top: 8px; font-size: 14px; }
-
-    .three-shell {
-      margin-top: 20px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .three-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-
-    .three-hint { color: var(--muted); font-size: 13px; }
-
-    .three-container {
-      width: 100%;
-      height: 480px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: radial-gradient(circle at 40% 30%, rgba(255, 143, 112, 0.08), transparent 40%),
-                  radial-gradient(circle at 70% 70%, rgba(111, 209, 197, 0.12), transparent 45%),
-                  #0c1024;
+      background: radial-gradient(circle at 40% 30%, rgba(255, 155, 106, 0.08), transparent 38%),
+                  radial-gradient(circle at 70% 70%, rgba(111, 209, 197, 0.12), transparent 42%),
+                  #070b1a;
       overflow: hidden;
     }
 
     @media (max-width: 640px) {
-      body { padding: 18px; }
-      .shell { padding: 18px; }
-      .three-container { height: 360px; }
+      body { padding: 16px; }
+      .shell { padding: 14px; }
+      .stage { height: 420px; }
     }
   </style>
 </head>
 <body>
   <div class="shell">
     <header>
-      <h1>Collatz Visualizer</h1>
-      <p class="tagline">Pick a starting integer, watch the 3n + 1 map unfold, and see how long it takes to fall back to 1. Animated, stats-rich, and zero dependencies.</p>
+      <h1>Collatz 3D Graph</h1>
+      <p class="tagline">One sphere per integer, edges for n -> f(n) (3n+1 map). Animate the sweep from 1..N and watch the graph grow.</p>
     </header>
 
     <div class="controls">
       <div class="panel">
-        <label for="start">Starting number</label>
+        <label for="maxN">Max N (10-5000)</label>
         <div class="row">
-          <input id="start" type="number" min="1" step="1" value="11" inputmode="numeric" />
-          <button id="run" class="btn" type="button">Visualize</button>
+          <input id="maxN" type="number" min="10" max="5000" step="10" value="800" />
+          <button id="rebuild" class="btn" type="button">Rebuild graph</button>
         </div>
-        <div class="presets" aria-label="Preset starting numbers">
-          <button class="chip" data-value="6">6</button>
-          <button class="chip" data-value="11">11</button>
-          <button class="chip" data-value="19">19</button>
-          <button class="chip" data-value="27">27</button>
-          <button class="chip" data-value="97">97</button>
-        </div>
-        <div class="bad-input" id="error" role="alert" aria-live="polite"></div>
       </div>
       <div class="panel">
-        <label for="speed">Animation delay (ms per step)</label>
-        <input id="speed" type="range" min="16" max="600" value="120" />
-        <div class="row" style="margin-top:8px;">
+        <label for="delay">Animation delay (ms per edge)</label>
+        <input id="delay" type="range" min="5" max="300" value="24" />
+        <div class="row" style="justify-content: space-between; margin-top:6px;">
           <span style="color:var(--muted);">Faster</span>
-          <span id="speed-value" style="font-weight:600;">120 ms</span>
+          <span id="delayLabel" style="font-weight:600;">24 ms</span>
           <span style="color:var(--muted);">Slower</span>
         </div>
       </div>
       <div class="panel">
-        <label for="max-n">Three.js sweep upper bound</label>
-        <div class="row">
-          <input id="max-n" type="number" min="10" max="4000" step="10" value="300" />
-          <button id="three-run" class="btn" type="button">Play 3D sweep</button>
-        </div>
-        <div class="row" style="margin-top:8px; gap: 10px;">
-          <span id="three-status" style="color:var(--muted);">Idle</span>
-          <button id="three-reset" class="chip" type="button">Reset</button>
+        <label>Playback</label>
+        <div class="row" style="gap:8px;">
+          <button id="play" class="btn" type="button">Play</button>
+          <button id="reset" class="chip" type="button">Reset</button>
+          <span id="status" class="status">Ready</span>
         </div>
       </div>
     </div>
 
-    <div class="metrics">
-      <div class="metric">
-        <div class="label">Steps to 1</div>
-        <div class="value" id="steps">-</div>
-      </div>
-      <div class="metric">
-        <div class="label">Peak value</div>
-        <div class="value" id="peak">-</div>
-      </div>
-      <div class="metric">
-        <div class="label">Current value</div>
-        <div class="value" id="current">-</div>
-      </div>
-      <div class="metric">
-        <div class="label">Sequence length</div>
-        <div class="value" id="length">-</div>
-      </div>
-    </div>
-
-    <div class="chart-shell">
-      <canvas id="chart" aria-label="Collatz sequence plot"></canvas>
-    </div>
-    <div class="sequence" id="sequence"></div>
-
-    <div class="three-shell">
-      <div class="three-header">
-        <h3>3D Collatz sweep</h3>
-        <span class="three-hint">Counts from 1 -> N and draws edges n -> f(n) in 3D space</span>
-      </div>
-      <div id="three-container" class="three-container" aria-label="Three.js Collatz visualization"></div>
-    </div>
+    <div id="stage" class="stage" aria-label="Three.js Collatz graph"></div>
   </div>
 
   <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
   <script>
-    // 2D canvas visualizer
-    const startInput = document.getElementById('start');
-    const runBtn = document.getElementById('run');
-    const errorEl = document.getElementById('error');
-    const speedInput = document.getElementById('speed');
-    const speedValue = document.getElementById('speed-value');
+    // Basic DOM refs
+    const maxNInput = document.getElementById('maxN');
+    const rebuildBtn = document.getElementById('rebuild');
+    const delayInput = document.getElementById('delay');
+    const delayLabel = document.getElementById('delayLabel');
+    const playBtn = document.getElementById('play');
+    const resetBtn = document.getElementById('reset');
+    const statusEl = document.getElementById('status');
+    const stage = document.getElementById('stage');
 
-    const stepsEl = document.getElementById('steps');
-    const peakEl = document.getElementById('peak');
-    const currentEl = document.getElementById('current');
-    const lengthEl = document.getElementById('length');
-    const sequenceEl = document.getElementById('sequence');
-    const canvas = document.getElementById('chart');
-    const ctx = canvas.getContext('2d');
+    // Three.js objects
+    let scene, camera, renderer, group;
+    let spheres, edgesGeo, edgesMesh;
+    let edgeCount = 0;
+    let visibleEdges = 0;
+    let playing = false;
+    let lastTick = 0;
+    let builtMaxN = 0;
 
-    let animationId = null;
-    const MAX_STEPS = 10000;
+    // Constants
+    const MIN_N = 10;
+    const MAX_N = 5000;
 
-    function collatzSequence(n) {
-      const seq = [n];
-      while (n !== 1 && seq.length < MAX_STEPS) {
-        n = n % 2 === 0 ? n / 2 : 3 * n + 1;
-        seq.push(n);
-      }
-      return seq;
+    function clampN(n) {
+      if (!Number.isFinite(n)) return 800;
+      return Math.min(Math.max(Math.round(n), MIN_N), MAX_N);
     }
 
-    function resizeCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.clientWidth * dpr;
-      canvas.height = canvas.clientHeight * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function collatzNext(n) {
+      return n % 2 === 0 ? n / 2 : 3 * n + 1;
     }
 
-    function drawChart(seq, upto) {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      const padding = 36;
-      const usableW = width - padding * 2;
-      const usableH = height - padding * 2;
-      ctx.clearRect(0, 0, width, height);
-
-      const maxVal = Math.max(...seq) || 1;
-      const step = Math.min(Math.max(upto, 0), seq.length - 1);
-
-      // gridlines
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const y = padding + (usableH / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(padding, y);
-        ctx.lineTo(width - padding, y);
-        ctx.stroke();
-      }
-
-      // sequence polyline
-      ctx.strokeStyle = '#6fd1c5';
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      for (let i = 0; i <= step; i++) {
-        const val = seq[i];
-        const x = padding + usableW * (i / Math.max(seq.length - 1, 1));
-        const y = padding + usableH - (val / maxVal) * usableH;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // current marker
-      const val = seq[step];
-      const x = padding + usableW * (step / Math.max(seq.length - 1, 1));
-      const y = padding + usableH - (val / maxVal) * usableH;
-      ctx.fillStyle = '#ffbc70';
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fill();
-
-      // label
-      ctx.fillStyle = '#e7e9f2';
-      ctx.font = '14px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'left';
-      const label = step === 0 ? `n step ${step}: ${val}` : `n -> step ${step}: ${val}`;
-      const labelY = y - 10 < padding ? y + 18 : y - 10;
-      ctx.fillText(label, x + 10, labelY);
-    }
-
-    function renderStats(seq, step) {
-      const peak = Math.max(...seq);
-      const converged = seq[seq.length - 1] === 1;
-      stepsEl.textContent = converged ? seq.length - 1 : '>' + (seq.length - 1);
-      peakEl.textContent = peak.toLocaleString();
-      currentEl.textContent = seq[step].toLocaleString();
-      lengthEl.textContent = seq.length.toLocaleString();
-    }
-
-    function renderSequence(seq) {
-      const preview = seq.slice(0, 120).join(' -> ');
-      const suffix = seq.length > 120 ? ' -> ...' : '';
-      sequenceEl.textContent = preview + suffix;
-    }
-
-    function startAnimation(seq) {
-      cancelAnimationFrame(animationId);
-      let step = 0;
-      let last = 0;
-      const delay = () => parseInt(speedInput.value, 10);
-
-      function frame(ts) {
-        if (!last) last = ts;
-        if (ts - last >= delay()) {
-          step = Math.min(step + 1, seq.length - 1);
-          last = ts;
-        }
-        drawChart(seq, step);
-        renderStats(seq, step);
-        if (step < seq.length - 1) animationId = requestAnimationFrame(frame);
-      }
-
-      animationId = requestAnimationFrame(frame);
-    }
-
-    function handleRun(value) {
-      if (!Number.isInteger(value) || value < 1) {
-        errorEl.textContent = 'Enter a positive integer (>= 1).';
-        return;
-      }
-      errorEl.textContent = '';
-      const seq = collatzSequence(value);
-      resizeCanvas();
-      renderSequence(seq);
-      startAnimation(seq);
-    }
-
-    // Events
-    runBtn.addEventListener('click', () => {
-      handleRun(parseInt(startInput.value, 10));
-    });
-
-    startInput.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') handleRun(parseInt(startInput.value, 10));
-    });
-
-    document.querySelectorAll('.chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        startInput.value = chip.dataset.value;
-        handleRun(parseInt(chip.dataset.value, 10));
-      });
-    });
-
-    speedInput.addEventListener('input', () => {
-      speedValue.textContent = `${speedInput.value} ms`;
-    });
-
-    window.addEventListener('resize', () => {
-      if (startInput.value) handleRun(parseInt(startInput.value, 10));
-      handleThreeResize();
-    });
-
-    // boot 2D
-    resizeCanvas();
-    handleRun(parseInt(startInput.value, 10));
-
-    // 3D Three.js sweep
-    const maxNInput = document.getElementById('max-n');
-    const threeRunBtn = document.getElementById('three-run');
-    const threeResetBtn = document.getElementById('three-reset');
-    const threeStatus = document.getElementById('three-status');
-    const threeContainer = document.getElementById('three-container');
-
-    const edgeColors = {
-      odd: [1, 0.56, 0.44],
-      even: [0.44, 0.82, 0.78],
-    };
-
-    let threeScene = null;
-    let threeCamera = null;
-    let threeRenderer = null;
-    let threeGroup = null;
-    let edgesGeo = null;
-    let edgesMesh = null;
-    let nodesPoints = null;
-    let threePlaying = false;
-    let threeCurrent = 1;
-    let threeMax = 300;
-    let threeEdgeCount = 0;
-    let threeLastTick = 0;
-
-    function clampMaxN(value) {
-      if (!Number.isFinite(value)) return 300;
-      return Math.min(Math.max(Math.round(value), 10), 4000);
-    }
-
-    function posFor(n) {
-      const angle = n * 0.45;
-      const radius = 0.16 * Math.sqrt(n);
-      const z = Math.log(n + 1) * 0.6;
+    function positionFor(n) {
+      const angle = n * 0.48;
+      const radius = 0.22 * Math.sqrt(n);
+      const z = Math.log(n + 1) * 0.7;
       return new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
     }
 
-    function ensureThree() {
-      if (threeScene) return;
-      threeScene = new THREE.Scene();
-      threeScene.background = null;
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = null;
 
-      threeCamera = new THREE.PerspectiveCamera(
-        60,
-        threeContainer.clientWidth / threeContainer.clientHeight,
-        0.1,
-        1000
-      );
-      threeCamera.position.set(0, 0, 18);
+      camera = new THREE.PerspectiveCamera(60, stage.clientWidth / stage.clientHeight, 0.1, 2000);
+      camera.position.set(0, 0, 24);
 
-      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
-      threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
-      threeContainer.innerHTML = '';
-      threeContainer.appendChild(threeRenderer.domElement);
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(stage.clientWidth, stage.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      stage.innerHTML = '';
+      stage.appendChild(renderer.domElement);
 
-      threeGroup = new THREE.Group();
-      threeScene.add(threeGroup);
+      group = new THREE.Group();
+      scene.add(group);
 
-      const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-      const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-      dir.position.set(3, 6, 8);
-      threeScene.add(ambient, dir);
+      const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.65);
+      dir.position.set(3, 7, 9);
+      scene.add(ambient, dir);
+
+      animateRender();
+    }
+
+    function buildGraph(maxN) {
+      const clamped = clampN(maxN);
+      builtMaxN = clamped;
+      maxNInput.value = clamped;
+
+      if (!scene) initThree();
+
+      // Nodes as instanced spheres
+      const sphereGeo = new THREE.SphereGeometry(0.08, 12, 12);
+      const sphereMat = new THREE.MeshStandardMaterial({ color: 0x6fd1c5, roughness: 0.35, metalness: 0.05 });
+      spheres = new THREE.InstancedMesh(sphereGeo, sphereMat, clamped);
+      const dummy = new THREE.Object3D();
+      for (let i = 1; i <= clamped; i++) {
+        const p = positionFor(i);
+        dummy.position.copy(p);
+        dummy.updateMatrix();
+        spheres.setMatrixAt(i - 1, dummy.matrix);
+      }
+      if (group.children.includes(spheres)) group.remove(spheres);
+      group.add(spheres);
+
+      // Build edges list (only when both endpoints are within 1..clamped)
+      const edgePositions = [];
+      const edgeColors = [];
+      for (let n = 1; n <= clamped; n++) {
+        const nxt = collatzNext(n);
+        if (nxt <= clamped) {
+          const a = positionFor(n);
+          const b = positionFor(nxt);
+          edgePositions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+          const col = n % 2 === 0 ? [0.44, 0.82, 0.78] : [1, 0.56, 0.44];
+          edgeColors.push(...col, ...col);
+        }
+      }
 
       edgesGeo = new THREE.BufferGeometry();
+      edgesGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePositions, 3));
+      edgesGeo.setAttribute('color', new THREE.Float32BufferAttribute(edgeColors, 3));
+      edgeCount = edgePositions.length / 6; // two vertices per edge
+      visibleEdges = 0;
+      edgesGeo.setDrawRange(0, 0);
+
+      if (edgesMesh) group.remove(edgesMesh);
       edgesMesh = new THREE.LineSegments(
         edgesGeo,
         new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 })
       );
-      threeGroup.add(edgesMesh);
+      group.add(edgesMesh);
 
-      startRenderLoop();
+      statusEl.textContent = `Ready with N=${clamped}, edges=${edgeCount}`;
+      playing = false;
+      playBtn.textContent = 'Play';
+      lastTick = 0;
     }
 
-    function rebuildNodes(maxN) {
-      if (!threeScene) ensureThree();
-      const nodePositions = new Float32Array(maxN * 3);
-      for (let i = 1; i <= maxN; i++) {
-        const p = posFor(i);
-        const idx = (i - 1) * 3;
-        nodePositions[idx] = p.x;
-        nodePositions[idx + 1] = p.y;
-        nodePositions[idx + 2] = p.z;
-      }
-      const nodeGeo = new THREE.BufferGeometry();
-      nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
-      const nodeMat = new THREE.PointsMaterial({ color: 0x6fd1c5, size: 0.16, sizeAttenuation: true });
-
-      if (nodesPoints) threeGroup.remove(nodesPoints);
-      nodesPoints = new THREE.Points(nodeGeo, nodeMat);
-      threeGroup.add(nodesPoints);
-    }
-
-    function rebuildEdges(maxN) {
-      const edgeCap = maxN * 2 * 3;
-      edgesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edgeCap), 3));
-      edgesGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(edgeCap), 3));
-      edgesGeo.setDrawRange(0, 0);
-      threeEdgeCount = 0;
-    }
-
-    function setThreeStatus(msg) {
-      threeStatus.textContent = msg;
-    }
-
-    function addEdgeFor(n) {
-      const next = n % 2 === 0 ? n / 2 : 3 * n + 1;
-      const a = posFor(n);
-      const b = posFor(next);
-
-      const posAttr = edgesGeo.getAttribute('position');
-      const colorAttr = edgesGeo.getAttribute('color');
-      const base = threeEdgeCount * 6;
-
-      posAttr.array[base] = a.x; posAttr.array[base + 1] = a.y; posAttr.array[base + 2] = a.z;
-      posAttr.array[base + 3] = b.x; posAttr.array[base + 4] = b.y; posAttr.array[base + 5] = b.z;
-
-      const col = n % 2 === 0 ? edgeColors.even : edgeColors.odd;
-      colorAttr.array[base] = col[0]; colorAttr.array[base + 1] = col[1]; colorAttr.array[base + 2] = col[2];
-      colorAttr.array[base + 3] = col[0]; colorAttr.array[base + 4] = col[1]; colorAttr.array[base + 5] = col[2];
-
-      posAttr.needsUpdate = true;
-      colorAttr.needsUpdate = true;
-      threeEdgeCount += 1;
-      edgesGeo.setDrawRange(0, threeEdgeCount * 2);
-    }
-
-    function resetThree(maxN) {
-      ensureThree();
-      threeMax = clampMaxN(maxN);
-      maxNInput.value = threeMax;
-      threeCurrent = 1;
-      threePlaying = false;
-      threeLastTick = 0;
-      rebuildNodes(threeMax);
-      rebuildEdges(threeMax);
-      setThreeStatus(`Ready to draw 1..${threeMax}`);
-      threeRenderer.render(threeScene, threeCamera);
-    }
-
-    function tickThree(ts) {
-      if (!threePlaying) return;
-      if (!threeLastTick) threeLastTick = ts;
-      const delay = parseInt(speedInput.value, 10);
-      if (ts - threeLastTick >= delay) {
-        if (threeCurrent > threeMax) {
-          threePlaying = false;
-          setThreeStatus(`Done - drew 1..${threeMax}`);
-          return;
+    function animateEdges(ts) {
+      if (!playing || !edgesGeo) return;
+      if (!lastTick) lastTick = ts;
+      const delay = parseInt(delayInput.value, 10);
+      if (ts - lastTick >= delay) {
+        visibleEdges = Math.min(visibleEdges + 1, edgeCount);
+        edgesGeo.setDrawRange(0, visibleEdges * 2);
+        statusEl.textContent = `Drawing edge ${visibleEdges}/${edgeCount}`;
+        lastTick = ts;
+        if (visibleEdges >= edgeCount) {
+          playing = false;
+          playBtn.textContent = 'Play';
+          statusEl.textContent = `Done (N=${builtMaxN}, edges=${edgeCount})`;
         }
-        addEdgeFor(threeCurrent);
-        setThreeStatus(`Drawing n=${threeCurrent}/${threeMax}`);
-        threeCurrent += 1;
-        threeLastTick = ts;
       }
-      requestAnimationFrame(tickThree);
+      requestAnimationFrame(animateEdges);
     }
 
-    function startRenderLoop() {
+    function animateRender() {
       function loop() {
-        if (threeGroup) threeGroup.rotation.y += 0.0025;
-        if (threeRenderer && threeScene && threeCamera) threeRenderer.render(threeScene, threeCamera);
+        if (group) group.rotation.y += 0.0018;
+        if (renderer && scene && camera) renderer.render(scene, camera);
         requestAnimationFrame(loop);
       }
       requestAnimationFrame(loop);
     }
 
-    function handleThreeResize() {
-      if (!threeRenderer || !threeCamera) return;
-      const { clientWidth, clientHeight } = threeContainer;
-      threeCamera.aspect = clientWidth / Math.max(clientHeight, 1);
-      threeCamera.updateProjectionMatrix();
-      threeRenderer.setSize(clientWidth, clientHeight);
+    function handleResize() {
+      if (!renderer || !camera) return;
+      const { clientWidth, clientHeight } = stage;
+      camera.aspect = clientWidth / Math.max(clientHeight, 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(clientWidth, clientHeight);
     }
 
-    threeRunBtn.addEventListener('click', () => {
-      const max = clampMaxN(parseInt(maxNInput.value, 10));
-      if (!threeScene) ensureThree();
-      if (max !== threeMax || !threeEdgeCount) resetThree(max);
-      threePlaying = true;
-      threeLastTick = 0;
-      requestAnimationFrame(tickThree);
-      setThreeStatus(`Drawing n=1/${threeMax}`);
+    // Event wiring
+    rebuildBtn.addEventListener('click', () => {
+      buildGraph(parseInt(maxNInput.value, 10));
     });
 
-    threeResetBtn.addEventListener('click', () => {
-      resetThree(parseInt(maxNInput.value, 10));
+    delayInput.addEventListener('input', () => {
+      delayLabel.textContent = `${delayInput.value} ms`;
     });
 
-    // boot 3D
-    resetThree(parseInt(maxNInput.value, 10));
+    playBtn.addEventListener('click', () => {
+      if (!edgesGeo) return;
+      playing = !playing;
+      playBtn.textContent = playing ? 'Pause' : 'Play';
+      if (playing) {
+        lastTick = 0;
+        if (visibleEdges >= edgeCount) {
+          visibleEdges = 0;
+          edgesGeo.setDrawRange(0, 0);
+        }
+        statusEl.textContent = 'Animating...';
+        requestAnimationFrame(animateEdges);
+      } else {
+        statusEl.textContent = `Paused at edge ${visibleEdges}/${edgeCount}`;
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      visibleEdges = 0;
+      if (edgesGeo) edgesGeo.setDrawRange(0, 0);
+      playing = false;
+      playBtn.textContent = 'Play';
+      statusEl.textContent = 'Reset';
+    });
+
+    window.addEventListener('resize', handleResize);
+
+    // Initial boot
+    buildGraph(parseInt(maxNInput.value, 10));
+    handleResize();
   </script>
 </body>
 </html>
